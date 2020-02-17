@@ -1,0 +1,120 @@
+<html>
+  <head>
+    <title>Sound Volume</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+    <script src="build/three.js"></script>
+    <script src="build/dat.gui.min.js"></script>
+    <script src="build/stats.min.js"></script>
+  </head>
+  <script>
+    //global variables
+    var renderer;
+    var scene;
+    var camera;
+    var control;
+    var stats;
+
+    //global variables - audio
+    var context;
+    var sourceNode;
+    var analyser;
+    var analyser2;
+
+    function init() {
+      //create the scene
+      scene = new THREE.Scene();
+
+      //add in the camera
+      camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+
+      //create a renderer
+      renderer = new THREE.WebGLRenderer();
+      renderer.setClearColor(0x000000, 1.0);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+
+      //create the particle system
+      //1) create a cube
+      var cubeGeometry = new THREE.BoxGeometry(3, 6, 3, 15, 25, 15);
+
+      //2) create particles
+      var pm = new THREE.PointsMaterial({
+        map: new THREE.TextureLoader().load("texture.png")
+      });
+      pm.blending = THREE.AdditiveBlending;
+      pm.transparent = true;
+      pm.size = 1.0;
+
+      //3) create the particle system
+      var ps = new THREE.Points(cubeGeometry, pm);
+      ps.sortParticles = true;
+      ps.name = "cube";
+      ps.position.x = 1.75;
+      scene.add(ps);
+
+      //position camera
+      camera.position.x = 10;
+      camera.position.y = 14;
+      camera.position.z = 10;
+      camera.lookAt(scene.position);
+
+      document.body.appendChild(renderer.domElement);
+
+      render();
+    }
+
+    function render() {
+      renderer.render(scene, camera);
+      requestAnimationFrame(render);
+    }
+
+    context = new AudioContext();
+
+    //set up analyser
+    analyser = context.createAnalyser();
+    analyser.smoothingTimeConstant = 0.4;
+    analyser.fftSize = 1024;
+
+    //second channel analyser
+    analyser2 = context.createAnalyser();
+    analyser2.smoothingTimeConstant = 0.4;
+    analyser.fftSize = 1024;
+
+    //create buffer source node
+    sourceNode = context.createBufferSource();
+    var splitter = context.createChannelSplitter();
+
+    //connect the source to the analyser and the splitter
+    sourceNode.connect(splitter);
+
+    //connect one of the outputs from the splitter to the analyser
+    splitter.connect(analyser, 0);
+    splitter.connect(analyser2, 1);
+
+    //connect to destination
+    sourceNode.connect(context.destination);
+
+    context = new AudioContext();
+
+    function handleResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // calls the init function when the window is done loading.
+    window.onload = init;
+    // calls the handleResize function when the window is resized
+    window.addEventListener("resize", handleResize, false);
+  </script>
+</html>
