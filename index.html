@@ -10,6 +10,7 @@
     <script src="build/three.js"></script>
     <script src="build/dat.gui.min.js"></script>
     <script src="build/stats.min.js"></script>
+    <script src="build/OrbitControls.js"></script>
   </head>
   <script>
     //global variables
@@ -39,34 +40,68 @@
 
       //create a renderer
       renderer = new THREE.WebGLRenderer();
-      renderer.setClearColor(0x000000, 1.0);
+      renderer.setClearColor(0xfed9d0, 1.0);
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.shadowMap.enabled = true;
+
+      // create the ground plane
+      var planeGeometry = new THREE.PlaneGeometry(80, 80);
+      var planeMaterial = new THREE.MeshPhongMaterial({color: 0xde2e6d});
+      var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+      plane.receiveShadow = true;
+
+      // rotate and position the plane
+      plane.rotation.x = -0.5 * Math.PI;
+      plane.position.x = 0;
+      plane.position.y = -2;
+      plane.position.z = 0;
+
+      // add the plane to the scene
+      scene.add(plane);
 
       //create the particle system
       //1) create a cube
       var cubeGeometry = new THREE.BoxGeometry(3, 6, 3, 15, 25, 15);
 
       //2) create particles
-      var pm = new THREE.PointsMaterial({
-        map: new THREE.TextureLoader().load("texture.png")
-      });
+      var pm = new THREE.PointsMaterial();
+      pm.map = new THREE.TextureLoader().load("texture2.png");
       pm.blending = THREE.AdditiveBlending;
       pm.transparent = true;
-      pm.size = 1.0;
+      pm.size = 0.5;
 
       //3) create the particle system
       var ps = new THREE.Points(cubeGeometry, pm);
       ps.sortParticles = true;
       ps.name = "cube";
-      ps.position.x = 1.75;
+      ps.position.x = -1.75;
       scene.add(ps);
+
+      //4) add the second particle system
+      var pm2 = pm.clone();
+      pm2.map = new THREE.TextureLoader().load("texture.png");
+      //5) add the second particle system
+      var ps2 = new THREE.Points(cubeGeometry, pm2);
+      ps2.name = "cube2";
+      ps2.position.x = 3;
+      scene.add(ps2);
+
+      // add spotlight for the shadows
+      var spotLight = new THREE.SpotLight(0xfb9dc2);
+      spotLight.position.set(10, 20, 20);
+      spotLight.shadowCameraNear = 20;
+      spotLight.shadowCameraFar = 50;
+      spotLight.castShadow = true;
+
+      scene.add(spotLight);
 
       //position camera
       camera.position.x = 10;
       camera.position.y = 14;
       camera.position.z = 10;
       camera.lookAt(scene.position);
+
+      cameraControl = new THREE.OrbitControls(camera);
 
       document.body.appendChild(renderer.domElement);
 
@@ -76,6 +111,8 @@
     function render() {
       renderer.render(scene, camera);
       requestAnimationFrame(render);
+
+      cameraControl.update();
     }
 
     context = new AudioContext();
@@ -105,6 +142,11 @@
     sourceNode.connect(context.destination);
 
     context = new AudioContext();
+
+    function loadSound(url) {
+      var request = new XMLHttpRequest();
+      request.open("GET", url, true);
+    }
 
     function handleResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
