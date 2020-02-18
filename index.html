@@ -5,6 +5,7 @@
       body {
         margin: 0;
         overflow: hidden;
+        background-image: linear-gradient(black, navy);
       }
     </style>
     <script src="build/three.js"></script>
@@ -39,29 +40,45 @@
       );
 
       //create a renderer
-      renderer = new THREE.WebGLRenderer();
-      renderer.setClearColor(0xfed9d0, 1.0);
+      renderer = new THREE.WebGLRenderer({alpha: true});
+      renderer.setClearColor(0x000000, 0);
+      antialias: true;
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.shadowMap.enabled = true;
 
-      // create the ground plane
-      var planeGeometry = new THREE.PlaneGeometry(80, 80);
-      var planeMaterial = new THREE.MeshPhongMaterial({color: 0xde2e6d});
+      //create the ground plane
+      var planeGeometry = new THREE.PlaneGeometry(240, 240);
+      var planeMaterial = new THREE.MeshPhongMaterial({
+        map: new THREE.TextureLoader().load("plane3.jpg")
+      });
       var plane = new THREE.Mesh(planeGeometry, planeMaterial);
       plane.receiveShadow = true;
 
       // rotate and position the plane
       plane.rotation.x = -0.5 * Math.PI;
       plane.position.x = 0;
-      plane.position.y = -2;
-      plane.position.z = 0;
+      plane.position.y = -50;
 
-      // add the plane to the scene
+      //add the plane to the scene
       scene.add(plane);
+
+      //create sun
+      var sunGeometry = new THREE.SphereGeometry(50, 55, 55);
+
+      var pm3 = new THREE.PointsMaterial();
+      pm3.map = new THREE.TextureLoader().load("texture5.jpg");
+      pm3.blending = THREE.AdditiveBlending;
+      pm3.size = 3;
+
+      var ps3 = new THREE.Points(sunGeometry, pm3);
+      ps3.sortParticles = true;
+      ps3.name = "disco";
+
+      scene.add(ps3);
 
       //create the particle system
       //1) create a cube
-      var cubeGeometry = new THREE.BoxGeometry(3, 6, 3, 15, 25, 15);
+      var cubeGeometry = new THREE.BoxGeometry(3, 15, 3, 20, 25, 15);
 
       //2) create particles
       var pm = new THREE.PointsMaterial();
@@ -79,7 +96,7 @@
 
       //4) add the second particle system
       var pm2 = pm.clone();
-      pm2.map = new THREE.TextureLoader().load("texture.png");
+      pm2.map = new THREE.TextureLoader().load("texture4.jpg");
       //5) add the second particle system
       var ps2 = new THREE.Points(cubeGeometry, pm2);
       ps2.name = "cube2";
@@ -87,13 +104,22 @@
       scene.add(ps2);
 
       // add spotlight for the shadows
-      var spotLight = new THREE.SpotLight(0xfb9dc2);
-      spotLight.position.set(10, 20, 20);
+      var spotLight = new THREE.SpotLight(0xffffff);
+      spotLight.position.set(100, 1000, 100);
+      spotLight.intensity = 1;
       spotLight.shadowCameraNear = 20;
       spotLight.shadowCameraFar = 50;
       spotLight.castShadow = true;
 
       scene.add(spotLight);
+
+      var skyColor = 0xf2e9aa;
+      var groundColor = 0xf5f2e6;
+
+      const intensity = 0.8;
+
+      var light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+      scene.add(light);
 
       //position camera
       camera.position.x = 10;
@@ -105,29 +131,36 @@
 
       document.body.appendChild(renderer.domElement);
 
-      setUpSound();
+      //setUpSound();
 
       render();
 
-      loadSound("Hot-Summer-Nights-Love Club.ogg");
+      //loadSound("Hot-Summer-Nights-Love Club.ogg");
     }
 
     function render() {
       renderer.render(scene, camera);
       requestAnimationFrame(render);
 
+      scene.getObjectByName("disco").rotation.y += 0.005;
+
       cameraControl.update();
 
-      updateCubes();
+      // updateCubes();
     }
 
-    function updateCubes() {
+    /* function updateCubes() {
       //get the average for the first channel
       var array = new Uint8Array(analyser.frequencyBinCount);
       analyser.getByteFrequencyData(array);
       var average = getAverageVolume(array);
 
       //get average for the second channel
+      var array2 = new Uint8Array(analyser2.frequencyBinCount);
+      analyser2.getByteFrequencyData(array2);
+      var average2 = getAverageVolume(array2);
+
+      //get average for the third channel
       var array2 = new Uint8Array(analyser2.frequencyBinCount);
       analyser2.getByteFrequencyData(array2);
       var average2 = getAverageVolume(array2);
@@ -218,6 +251,7 @@
     function onError(e) {
       console.log(e);
     }
+    */
 
     function handleResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
